@@ -18,7 +18,7 @@ dist/
 *.egg
 *.whl
 *.zip
-
+build/
 # Installer logs
 pip-log.txt
 pip-delete-this-directory.txt
@@ -44,6 +44,11 @@ init_db.sqlite
 
 # VS Code
 .vscode/
+.vscode/sett
+.claude/
+# SvelteKit build artifacts
+.svelte-kit/
+
 
 # MacOS / Linux
 .DS_Store
@@ -87,4 +92,3 @@ src/model/trained_model.joblib
 
 #config files
 *.ps1
-

@@ -4,12 +4,14 @@
   import { apiClient } from '$lib/api';
   import { addNotification } from '$lib/stores';
   import type { Article } from '$lib/api';
+  import { Button } from '$lib/ui/button';
+  import { Card } from '$lib/ui/card';
 
   let article: Article | null = null;
   let isLoading = true;
-  let pmid: string;
+  let pmid = '';
 
-  $: pmid = $page.params.pmid;
+  $: pmid = $page.params.pmid ?? '';
 
   async function loadArticle() {
     if (!pmid) return;
@@ -55,12 +57,12 @@
   </div>
 
   {#if isLoading}
-    <div class="card text-center py-8">
+    <Card className="text-center py-8">
       <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
       <p class="text-gray-600">Loading article details...</p>
-    </div>
+    </Card>
   {:else if article}
-    <div class="card">
+    <Card>
       <!-- Article Header -->
       <div class="border-b border-gray-200 pb-4 mb-4">
         <h1 class="text-2xl font-bold text-gray-900 mb-2">
@@ -111,32 +113,33 @@
       <div class="border-t border-gray-200 pt-4">
         <h2 class="text-lg font-semibold text-gray-900 mb-3">🔗 External Links</h2>
         <div class="flex flex-wrap gap-3">
-          <a
+          <Button
+            as="a"
             href="https://pubmed.ncbi.nlm.nih.gov/{article.pmid}/"
             target="_blank"
             rel="noopener noreferrer"
-            class="btn-primary"
           >
             📖 View on PubMed
-          </a>
+          </Button>
           {#if article.doi}
-            <a
+            <Button
+              as="a"
+              variant="secondary"
               href="https://doi.org/{article.doi}"
               target="_blank"
               rel="noopener noreferrer"
-              class="btn-secondary"
             >
               🔗 View DOI
-            </a>
+            </Button>
           {/if}
         </div>
       </div>
-    </div>
+    </Card>
   {:else}
-    <div class="card text-center py-8">
+    <Card className="text-center py-8">
       <p class="text-red-600 text-lg">❌ Article not found</p>
       <p class="text-gray-600 mt-2">The article with PMID {pmid} could not be loaded.</p>
-      <a href="/" class="btn-primary mt-4">🏠 Back to Dashboard</a>
-    </div>
+      <Button as="a" href="/" className="mt-4">🏠 Back to Dashboard</Button>
+    </Card>
   {/if}
 </div>

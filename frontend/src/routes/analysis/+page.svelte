@@ -2,6 +2,9 @@
   import { onMount } from 'svelte';
   import { apiClient } from '$lib/api';
   import { addNotification } from '$lib/stores';
+  import { Button } from '$lib/ui/button';
+  import { Card } from '$lib/ui/card';
+  import { Input } from '$lib/ui/input';
 
   let searchHistory: any[] = [];
   let filteredSearches: any[] = [];
@@ -72,6 +75,12 @@
       goToPage(pageNum);
     }
     target.value = '';
+  }
+
+  function handleJumpKeypress(event: Event) {
+    if (event instanceof KeyboardEvent && event.key === 'Enter') {
+      jumpToPage(event);
+    }
   }
 
   // Watch for search query changes
@@ -150,7 +159,7 @@
 
 <div class="space-y-6">
   <!-- Page Header -->
-  <div class="card">
+  <Card>
     <div class="flex items-center justify-between">
       <div>
         <h1 class="text-3xl font-bold text-gray-900">
@@ -160,38 +169,42 @@
           Analyze research opportunities using AI-powered scoring and insights
         </p>
       </div>
-      <button
+      <Button
         on:click={loadSearchHistory}
         disabled={isLoading}
-        class="btn-secondary"
+        variant="secondary"
       >
         {#if isLoading}
           🔄 Loading...
         {:else}
           🔄 Refresh
         {/if}
-      </button>
+      </Button>
     </div>
-  </div>
+  </Card>
 
   {#if isLoading}
-    <div class="card text-center py-8">
+    <Card className="text-center py-8">
       <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
       <p class="text-gray-600">Loading analysis data...</p>
-    </div>
+    </Card>
   {:else if searchHistory.length === 0}
-    <div class="card text-center py-8">
+    <Card className="text-center py-8">
       <p class="text-lg text-gray-500">📈 No searches found</p>
       <p class="text-sm text-gray-400 mt-2">Perform a PubMed search to generate analysis data</p>
-      <a href="/" class="btn-primary mt-4">🏠 Go to Dashboard</a>
-    </div>
+      <Button as="a" href="/" className="mt-4">🏠 Go to Dashboard</Button>
+    </Card>
   {:else}
     <!-- Search Selection -->
-    <div class="card">
+    <Card>
       <div class="flex justify-between items-center mb-4">
         <h2 class="text-xl font-semibold text-gray-900">🔍 Select Search for Analysis</h2>
         <div class="flex space-x-2">
-          <select bind:value={itemsPerPage} on:change={() => currentPage = 1} class="input-field text-sm">
+          <select
+            bind:value={itemsPerPage}
+            on:change={() => currentPage = 1}
+            class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          >
             <option value={6}>6 per page</option>
             <option value={12}>12 per page</option>
             <option value={24}>24 per page</option>
@@ -202,11 +215,11 @@
 
       <!-- Search and Filter Controls -->
       <div class="mb-4">
-        <input
+        <Input
           type="text"
           bind:value={searchQuery}
           placeholder="Search by research idea, keywords, or search ID..."
-          class="input-field w-full"
+          class="w-full"
         />
       </div>
 
@@ -223,12 +236,14 @@
           {#if searchQuery}
             <p class="text-lg">🔍 No searches found matching "{searchQuery}"</p>
             <p class="text-sm">Try adjusting your search terms</p>
-            <button 
+            <Button 
               on:click={() => searchQuery = ''}
-              class="btn-secondary mt-3"
+              variant="secondary"
+              size="sm"
+              class="mt-3"
             >
               Clear Search
-            </button>
+            </Button>
           {:else}
             <p class="text-lg">📈 No searches found</p>
             <p class="text-sm">Perform a PubMed search to generate analysis data</p>
@@ -282,14 +297,14 @@
                 </p>
                 <div class="flex items-center space-x-2">
                   <label for="jumpToPage" class="text-sm text-gray-700">Jump to:</label>
-                  <input
+                  <Input
                     id="jumpToPage"
                     type="number"
                     min="1"
                     max={totalPages}
                     placeholder="Page"
-                    class="w-16 px-2 py-1 border border-gray-300 rounded text-sm"
-                    on:keypress={(e) => e.key === 'Enter' && jumpToPage(e)}
+                    class="w-16 px-2 py-1 text-sm"
+                    on:keypress={handleJumpKeypress}
                   />
                 </div>
               </div>
@@ -350,11 +365,11 @@
           </div>
         {/if}
       {/if}
-    </div>
+    </Card>
 
     {#if selectedSearch}
       <!-- Selected Search Details -->
-      <div class="card">
+      <Card>
         <h2 class="text-xl font-semibold mb-4 text-gray-900">📋 Search Details</h2>
         <div class="bg-gray-50 p-4 rounded-lg">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -376,16 +391,16 @@
             </div>
           </div>
         </div>
-      </div>
+      </Card>
 
       <!-- Opportunity Scores -->
       {#if isLoadingScores}
-        <div class="card text-center py-8">
+        <Card className="text-center py-8">
           <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p class="text-gray-600">Computing opportunity scores...</p>
-        </div>
+        </Card>
       {:else if opportunityScores}
-        <div class="card">
+        <Card>
           <h2 class="text-xl font-semibold mb-4 text-gray-900">🎯 Opportunity Scores</h2>
           
           <!-- Overall Score -->
@@ -462,25 +477,25 @@
             <h4 class="font-medium text-gray-900 mb-2">💡 AI Recommendation</h4>
             <p class="text-gray-700">{getRecommendation(opportunityScores)}</p>
           </div>
-        </div>
+        </Card>
       {:else}
-        <div class="card text-center py-8">
+        <Card className="text-center py-8">
           <p class="text-lg text-gray-500">⏳ Opportunity scores not available</p>
           <p class="text-sm text-gray-400 mt-2">
             Scores are computed in the background after each search. 
             Please wait a few moments and refresh.
           </p>
-          <button
+          <Button
             on:click={() => loadOpportunityScores(selectedSearch.search_id)}
-            class="btn-primary mt-4"
+            class="mt-4"
           >
             🔄 Check Again
-          </button>
-        </div>
+          </Button>
+        </Card>
       {/if}
 
       <!-- Research Insights -->
-      <div class="card">
+      <Card>
         <h2 class="text-xl font-semibold mb-4 text-gray-900">🔬 Research Insights</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div class="p-4 border rounded-lg">
@@ -523,7 +538,7 @@
             </div>
           </div>
         </div>
-      </div>
+      </Card>
     {/if}
   {/if}
 </div>

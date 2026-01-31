@@ -5,6 +5,8 @@
   import { onMount } from 'svelte';
   import { apiClient } from '$lib/api';
   import { setError, articles, addNotification } from '$lib/stores';
+  import { Card } from '$lib/ui/card';
+  import { Button } from '$lib/ui/button';
 
   let apiStatus = 'checking...';
   let articleCount = 0;
@@ -43,7 +45,7 @@
 
 <div class="space-y-6">
   <!-- Welcome Section -->
-  <div class="card">
+  <Card>
     <div class="flex items-center justify-between">
       <div>
         <h1 class="text-3xl font-bold text-gray-900">
@@ -59,15 +61,17 @@
         <div class="text-xs text-blue-600 mt-1">
           📚 {articleCount} articles stored
         </div>
-        <button
+        <Button
           on:click={checkApiHealth}
-          class="text-xs text-blue-600 hover:text-blue-800 mt-1"
+          variant="link"
+          size="sm"
+          className="mt-1 text-xs"
         >
           🔄 Refresh Status
-        </button>
+        </Button>
       </div>
     </div>
-  </div>
+  </Card>
 
   <!-- Search Form -->
   <SearchForm />
@@ -80,28 +84,28 @@
 
   <!-- Quick Info -->
   <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-    <div class="card text-center">
+    <Card className="text-center">
       <div class="text-2xl mb-2">🧠</div>
       <h3 class="font-semibold text-gray-900">AI-Powered Keywords</h3>
       <p class="text-sm text-gray-600 mt-2">
         Generate relevant keywords from your research ideas using PubMedBERT
       </p>
-    </div>
+    </Card>
     
-    <div class="card text-center">
+    <Card className="text-center">
       <div class="text-2xl mb-2">📊</div>
       <h3 class="font-semibold text-gray-900">Opportunity Scoring</h3>
       <p class="text-sm text-gray-600 mt-2">
         Analyze novelty, citation velocity, and recency to identify research opportunities
       </p>
-    </div>
+    </Card>
     
-    <div class="card text-center">
+    <Card className="text-center">
       <div class="text-2xl mb-2">🔍</div>
       <h3 class="font-semibold text-gray-900">PubMed Integration</h3>
       <p class="text-sm text-gray-600 mt-2">
         Search and analyze medical literature with MeSH term expansion
       </p>
-    </div>
+    </Card>
   </div>
 </div>

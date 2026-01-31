@@ -11,7 +11,8 @@ def expand_with_mesh(term: str) -> List[str]:
             "term": term,
             "retmode": "json"
         }
-        search_resp = requests.get(search_url, params=search_params)
+        search_resp = requests.get(search_url, params=search_params, timeout=10)
+        search_resp.raise_for_status()
         search_data = search_resp.json()
 
         id_list = search_data.get("esearchresult", {}).get("idlist", [])
@@ -27,7 +28,8 @@ def expand_with_mesh(term: str) -> List[str]:
             "id": mesh_uid,
             "retmode": "json"
         }
-        summary_resp = requests.get(summary_url, params=summary_params)
+        summary_resp = requests.get(summary_url, params=summary_params, timeout=10)
+        summary_resp.raise_for_status()
         summary_data = summary_resp.json()
         doc = summary_data.get("result", {}).get(mesh_uid, {})
 

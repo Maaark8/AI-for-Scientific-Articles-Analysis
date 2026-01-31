@@ -11,7 +11,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from db_manager import DatabaseManager
 from pubmed_fetcher import search_pubmed, fetch_summaries
-from mesh_expander import expand_with_mesh
+from research_utils import build_pubmed_query
 from opportunity_score import compute_novelty_score, compute_citation_velocity_score, compute_recency_score, compute_opportunity_score
 from transformers import AutoModel, AutoTokenizer
 from keybert import KeyBERT
@@ -272,16 +272,7 @@ class PrimeTimeApp:
     
     def search_pubmed(self):
         raw_keywords = self.keywords_text.get("1.0", tk.END).strip().replace("\n", " ")
-        keyword_list = [kw.strip() for kw in raw_keywords.split(";") if kw.strip()]
-        query_groups = []
-
-        for kw in keyword_list:
-            expanded = expand_with_mesh(kw)
-            if expanded:
-                group = "(" + " OR ".join(expanded) + ")"
-                query_groups.append(group)
-
-        query = " AND ".join(query_groups)
+        query = build_pubmed_query(raw_keywords)
 
         if not query:
             messagebox.showwarning("Warning", "Please enter a search term.")

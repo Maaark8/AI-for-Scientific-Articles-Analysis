@@ -2,6 +2,8 @@
   import { onMount } from 'svelte';
   import { apiClient } from '../api';
   import { addNotification } from '../stores';
+  import { Button } from '$lib/ui/button';
+  import { Card } from '$lib/ui/card';
 
   let searchHistory: any[] = [];
   let isLoading = false;
@@ -52,20 +54,22 @@
   });
 </script>
 
-<div class="card">
+<Card>
   <div class="flex justify-between items-center mb-4">
     <h2 class="text-xl font-semibold text-gray-900">📋 Search History</h2>
-    <button
+    <Button
       on:click={loadSearchHistory}
       disabled={isLoading}
-      class="btn-secondary text-sm disabled:opacity-50"
+      variant="secondary"
+      size="sm"
+      className="disabled:opacity-50"
     >
       {#if isLoading}
         🔄 Loading...
       {:else}
         🔄 Refresh
       {/if}
-    </button>
+    </Button>
   </div>
 
   {#if searchHistory.length === 0}
@@ -93,16 +97,17 @@
               </div>
             </div>
             <div class="ml-4">
-              <button
+              <Button
                 on:click={() => viewOpportunityScores(search.search_id)}
-                class="text-sm text-blue-600 hover:text-blue-800"
+                variant="link"
+                size="sm"
               >
                 📊 View Scores
-              </button>
+              </Button>
             </div>
           </div>
         </div>
       {/each}
     </div>
   {/if}
-</div>
+</Card>

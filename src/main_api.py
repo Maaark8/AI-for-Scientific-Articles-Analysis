@@ -1,8 +1,5 @@
 #!/usr/bin/env python
-import sys
 import os
-import asyncio
-import threading
 from datetime import datetime
 from typing import List, Optional, Dict, Any
 import torch
@@ -17,13 +14,13 @@ import uvicorn
 
 from db_manager import DatabaseManager
 from pubmed_fetcher import search_pubmed, fetch_summaries
-from mesh_expander import expand_with_mesh
 from opportunity_score import compute_novelty_score, compute_citation_velocity_score, compute_recency_score, compute_opportunity_score
 from transformers import AutoModel, AutoTokenizer
 from keybert import KeyBERT
 from sklearn.metrics.pairwise import cosine_similarity
 from clustering import run_clustering_pipeline
 from forecast import run_forecast_pipeline
+from research_utils import build_pubmed_query
 
 # Load environment variables
 ENV_PATH = Path(__file__).parent.parent / ".env"
@@ -61,7 +58,8 @@ class SearchRequest(BaseModel):
         ..., 
         description="Semicolon-separated keywords for PubMed search",
         example="machine learning; cancer diagnosis; medical imaging",
-        min_length=3
+        min_length=3,
+        max_length=2000
     )
     idea_text: str = Field(
         ..., 
@@ -151,48 +149,6 @@ class ArticleResponse(BaseModel):
         example="This study presents a comprehensive review of machine learning applications..."
     )
 
-class ArticleDetailResponse(BaseModel):
-    pmid: str = Field(
-        ..., 
-        description="PubMed ID (unique identifier)",
-        example="12345678"
-    )
-    title: str = Field(
-        ..., 
-        description="Article title",
-        example="Machine Learning in Cancer Diagnosis: A Systematic Review"
-    )
-    journal: Optional[str] = Field(
-        None, 
-        description="Journal name",
-        example="Nature Medicine"
-    )
-    pub_date: Optional[str] = Field(
-        None, 
-        description="Publication date (YYYY-MM-DD format)",
-        example="2023-06-15"
-    )
-    authors: List[str] = Field(
-        default_factory=list, 
-        description="List of author names",
-        example=["Smith, John", "Doe, Jane", "Johnson, Bob"]
-    )
-    citation_count: Optional[int] = Field(
-        None, 
-        description="Number of citations",
-        example=150
-    )
-    doi: Optional[str] = Field(
-        None, 
-        description="Digital Object Identifier",
-        example="10.1038/s41591-023-02345-6"
-    )
-    abstract: Optional[str] = Field(
-        None, 
-        description="Article abstract",
-        example="This study presents a comprehensive review of machine learning applications in cancer diagnosis. The research demonstrates significant improvements in diagnostic accuracy when using deep learning algorithms compared to traditional methods..."
-    )
-
 class OpportunityScoreResponse(BaseModel):
     search_id: int = Field(
         ..., 
@@ -234,28 +190,28 @@ class OpportunityScoreResponse(BaseModel):
     )
 
 class DatabaseConfig(BaseModel):
-    host: str = Field(
-        default=DB_HOST, 
+    host: Optional[str] = Field(
+        default=None, 
         description="Database host address",
         example="localhost"
     )
-    port: str = Field(
-        default=DB_PORT, 
+    port: Optional[str] = Field(
+        default=None, 
         description="Database port number",
         example="5432"
     )
-    database: str = Field(
-        default=DB_NAME, 
+    database: Optional[str] = Field(
+        default=None, 
         description="Database name",
         example="prime_time_db"
     )
-    username: str = Field(
-        default=DB_USER, 
+    username: Optional[str] = Field(
+        default=None, 
         description="Database username",
         example="postgres"
     )
-    password: str = Field(
-        default=DB_PASSWORD, 
+    password: Optional[str] = Field(
+        default=None, 
         description="Database password",
         example="your_password"
     )
@@ -309,9 +265,14 @@ app = FastAPI(
 )
 
 # Add CORS middleware
+raw_origins = os.getenv("CORS_ALLOW_ORIGINS", "")
+cors_origins = [origin.strip() for origin in raw_origins.split(",") if origin.strip()]
+if not cors_origins:
+    cors_origins = ["http://localhost:5173", "http://127.0.0.1:5173"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure this properly for production
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -369,6 +330,20 @@ def compute_embedding(text: str) -> np.ndarray:
         emb = bert_model(**tokens).last_hidden_state.mean(dim=1).squeeze()
     return emb.numpy()
 
+def format_article_response(article: Dict[str, Any]) -> ArticleResponse:
+    authors = ", ".join(article["authors"]) if article["authors"] and article["authors"][0] else ""
+    pub_date = article["pub_date"].strftime("%Y-%m-%d") if article["pub_date"] else None
+    return ArticleResponse(
+        pmid=article["pmid"],
+        title=article["title"],
+        journal=article["journal"],
+        pub_date=pub_date,
+        authors=authors.split(", ") if authors else [],
+        citation_count=article["citation_count"],
+        doi=article["doi"],
+        abstract=article["abstract"]
+    )
+
 @app.on_event("startup")
 async def startup_event():
     """Initialize models and database on startup"""
@@ -423,17 +398,17 @@ async def connect_database(config: DatabaseConfig):
         
         # Create new connection
         db_manager = DatabaseManager(
-            dbname=config.database,
-            user=config.username,
-            password=config.password,
-            host=config.host,
-            port=config.port
+            dbname=config.database or DB_NAME,
+            user=config.username or DB_USER,
+            password=config.password or DB_PASSWORD,
+            host=config.host or DB_HOST,
+            port=config.port or DB_PORT
         )
         
         if db_manager.connect():
             return DatabaseStatusResponse(
                 connected=True,
-                message=f"Connected to database {config.database}"
+                message=f"Connected to database {config.database or DB_NAME}"
             )
         else:
             return DatabaseStatusResponse(
@@ -589,17 +564,8 @@ async def search_pubmed_articles(request: SearchRequest, background_tasks: Backg
     try:
         initialize_database()
         
-        # Parse keywords
-        keyword_list = [kw.strip() for kw in request.keywords.split(";") if kw.strip()]
-        query_groups = []
-        
-        for kw in keyword_list:
-            expanded = expand_with_mesh(kw)
-            if expanded:
-                group = "(" + " OR ".join(expanded) + ")"
-                query_groups.append(group)
-        
-        query = " AND ".join(query_groups)
+        # Parse and expand keywords
+        query = build_pubmed_query(request.keywords)
         
         if not query:
             raise HTTPException(status_code=400, detail="No valid search terms provided")
@@ -737,29 +703,12 @@ async def get_articles():
     try:
         initialize_database()
         articles = db_manager.get_all_articles()
-        
-        response_articles = []
-        for article in articles:
-            authors = ", ".join(article["authors"]) if article["authors"] and article["authors"][0] else ""
-            pub_date = article["pub_date"].strftime("%Y-%m-%d") if article["pub_date"] else None
-            
-            response_articles.append(ArticleResponse(
-                pmid=article["pmid"],
-                title=article["title"],
-                journal=article["journal"],
-                pub_date=pub_date,
-                authors=authors.split(", ") if authors else [],
-                citation_count=article["citation_count"],
-                doi=article["doi"],
-                abstract=article["abstract"]
-            ))
-        
-        return response_articles
+        return [format_article_response(article) for article in articles]
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch articles: {str(e)}")
 
-@app.get("/articles/{pmid}", response_model=ArticleDetailResponse, tags=["articles"])
+@app.get("/articles/{pmid}", response_model=ArticleResponse, tags=["articles"])
 async def get_article_detail(pmid: str):
     """Get detailed information about a specific article"""
     try:
@@ -769,19 +718,7 @@ async def get_article_detail(pmid: str):
         if not article:
             raise HTTPException(status_code=404, detail="Article not found")
         
-        authors = ", ".join(article["authors"]) if article["authors"] and article["authors"][0] else ""
-        pub_date = article["pub_date"].strftime("%Y-%m-%d") if article["pub_date"] else None
-        
-        return ArticleDetailResponse(
-            pmid=article["pmid"],
-            title=article["title"],
-            journal=article["journal"],
-            pub_date=pub_date,
-            authors=authors.split(", ") if authors else [],
-            citation_count=article["citation_count"],
-            doi=article["doi"],
-            abstract=article["abstract"]
-        )
+        return format_article_response(article)
         
     except HTTPException:
         raise

@@ -4,6 +4,11 @@
   import type { KeywordGenerationResponse, SearchResponse } from '../api';
   import KeywordPanel from './KeywordPanel.svelte';
   import confetti from 'canvas-confetti';
+  import { Button } from '$lib/ui/button';
+  import { Card } from '$lib/ui/card';
+  import { Input } from '$lib/ui/input';
+  import { Textarea } from '$lib/ui/textarea';
+  import { Label } from '$lib/ui/label';
 
   let researchIdea = '';
   let keywords = '';
@@ -190,36 +195,36 @@
   }
 </script>
 
-<div class="card">
+<Card>
   <h2 class="text-xl font-semibold mb-4 text-gray-900">🔍 Research Search</h2>
   
   <!-- Research Idea Input -->
   <div class="mb-4">
-    <label for="research-idea" class="block text-sm font-medium text-gray-700 mb-2">
+    <Label for="research-idea" className="block text-sm text-gray-700 mb-2">
       Research Idea
-    </label>
-    <textarea
+    </Label>
+    <Textarea
       id="research-idea"
       bind:value={researchIdea}
       placeholder="Enter your research idea (e.g., 'machine learning applications in cancer diagnosis')"
       rows="3"
-      class="textarea-field"
-    ></textarea>
+      className="resize-y"
+    />
   </div>
 
   <!-- Generate Keywords Button -->
   <div class="mb-4">
-    <button
+    <Button
       on:click={generateKeywords}
       disabled={isGeneratingKeywords || !researchIdea.trim()}
-      class="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+      className="disabled:opacity-50 disabled:cursor-not-allowed"
     >
       {#if isGeneratingKeywords}
         🔄 Generating Keywords...
       {:else}
         🧠 Generate Keywords
       {/if}
-    </button>
+    </Button>
   </div>
 
   <!-- Generated Keywords Display -->
@@ -227,15 +232,15 @@
 
   <!-- Manual Keywords Input -->
   <div class="mb-4">
-    <label for="keywords" class="block text-sm font-medium text-gray-700 mb-2">
+    <Label for="keywords" className="block text-sm text-gray-700 mb-2">
       Keywords for PubMed Search
-    </label>
-    <input
+    </Label>
+    <Input
       id="keywords"
       type="text"
       bind:value={keywords}
       placeholder="Enter keywords separated by semicolons (e.g., gene editing; sickle cell; CRISPR)"
-      class="input-field"
+      className="w-full"
     />
   </div>
 
@@ -244,10 +249,14 @@
     <!-- Max Results -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div>
-        <label for="max-results" class="block text-sm font-medium text-gray-700 mb-2">
+        <Label for="max-results" className="block text-sm text-gray-700 mb-2">
           Max Results
-        </label>
-        <select id="max-results" bind:value={maxResults} class="input-field">
+        </Label>
+        <select
+          id="max-results"
+          bind:value={maxResults}
+          class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        >
           <option value={5}>5 articles</option>
           <option value={10}>10 articles</option>
           <option value={20}>20 articles</option>
@@ -258,15 +267,16 @@
       
       <!-- Date Filter Toggle -->
       <div class="md:col-span-2 flex items-end">
-        <button
+        <Button
           type="button"
           on:click={() => showDateFilters = !showDateFilters}
-          class="btn-secondary flex items-center space-x-2"
+          variant="secondary"
+          className="flex items-center space-x-2"
         >
           <span>📅</span>
           <span>{showDateFilters ? 'Hide' : 'Show'} Date Filters</span>
           <span class="transform transition-transform {showDateFilters ? 'rotate-180' : ''}">▼</span>
-        </button>
+        </Button>
       </div>
     </div>
 
@@ -277,66 +287,76 @@
         
         <!-- Quick Date Range Buttons -->
         <div class="flex flex-wrap gap-2 mb-4">
-          <button
+          <Button
             type="button"
             on:click={() => setQuickDateRange('1year')}
-            class="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200 transition-colors"
+            size="sm"
+            variant="secondary"
+            className="rounded-full px-3 py-1 text-xs bg-blue-100 text-blue-700 hover:bg-blue-200"
           >
             Last Year
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             on:click={() => setQuickDateRange('2years')}
-            class="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200 transition-colors"
+            size="sm"
+            variant="secondary"
+            className="rounded-full px-3 py-1 text-xs bg-blue-100 text-blue-700 hover:bg-blue-200"
           >
             Last 2 Years
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             on:click={() => setQuickDateRange('5years')}
-            class="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200 transition-colors"
+            size="sm"
+            variant="secondary"
+            className="rounded-full px-3 py-1 text-xs bg-blue-100 text-blue-700 hover:bg-blue-200"
           >
             Last 5 Years
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             on:click={() => setQuickDateRange('10years')}
-            class="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200 transition-colors"
+            size="sm"
+            variant="secondary"
+            className="rounded-full px-3 py-1 text-xs bg-blue-100 text-blue-700 hover:bg-blue-200"
           >
             Last 10 Years
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             on:click={() => setQuickDateRange('all')}
-            class="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200 transition-colors"
+            size="sm"
+            variant="secondary"
+            className="rounded-full px-3 py-1 text-xs bg-gray-100 text-gray-700 hover:bg-gray-200"
           >
             All Time
-          </button>
+          </Button>
         </div>
 
         <!-- Date Picker Inputs -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label for="start-date" class="block text-sm font-medium text-gray-700 mb-2">
+            <Label for="start-date" className="block text-sm text-gray-700 mb-2">
               Start Date
-            </label>
-            <input
+            </Label>
+            <Input
               id="start-date"
               type="date"
               bind:value={startDate}
-              class="input-field"
+              className="w-full"
               max={endDate || undefined}
             />
           </div>
           <div>
-            <label for="end-date" class="block text-sm font-medium text-gray-700 mb-2">
+            <Label for="end-date" className="block text-sm text-gray-700 mb-2">
               End Date
-            </label>
-            <input
+            </Label>
+            <Input
               id="end-date"
               type="date"
               bind:value={endDate}
-              class="input-field"
+              className="w-full"
               min={startDate || undefined}
               max={new Date().toISOString().split('T')[0]}
             />
@@ -362,19 +382,19 @@
 
   <!-- Search Button -->
   <div class="flex gap-4">
-    <button
+    <Button
       on:click={searchPubmed}
       disabled={isSearching || !keywords.trim()}
-      class="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+      className="disabled:opacity-50 disabled:cursor-not-allowed"
     >
       {#if isSearching}
         🔄 Searching PubMed...
       {:else}
         🔍 Search PubMed
       {/if}
-    </button>
+    </Button>
     
-    <button
+    <Button
       type="button"
       on:click={() => {
         researchIdea = '';
@@ -383,19 +403,21 @@
         expandedKeywords = [];
         clearError();
       }}
-      class="btn-secondary"
+      variant="secondary"
     >
       🗑️ Clear
-    </button>
+    </Button>
     
     <!-- Test Confetti Button (for debugging) -->
-    <!----><button
+    <!----><Button
       type="button"
       on:click={triggerConfetti}
-      class="px-4 py-2 text-sm bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 transition-colors"
+      variant="secondary"
+      size="sm"
+      className="bg-yellow-100 text-yellow-700 hover:bg-yellow-200"
       title="Test confetti animation"
     >
       🎉 Test Confetti
-    </button>
+    </Button>
   </div>
-</div>
+</Card>

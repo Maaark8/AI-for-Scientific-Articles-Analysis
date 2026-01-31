@@ -80,13 +80,10 @@ def get_citation_count(doi):
         time.sleep(1)
         url = f"https://api.crossref.org/works/{doi}"
         headers = {"User-Agent": "PrimeTimeResearchApp/0.1 (mailto:maia.marin94@e-uvt.ro)"}
-        response = requests.get(url, headers=headers)
-        if response.status_code == 200:
-            data = response.json()
-            return data["message"].get("is-referenced-by-count", 0)
-        else:
-            print(f"CrossRef API error: {response.status_code}")
-            return 0
+        response = requests.get(url, headers=headers, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        return data["message"].get("is-referenced-by-count", 0)
     except Exception as e:
         print(f"Error getting citation count: {e}")
         return 0
@@ -105,19 +102,15 @@ def get_citation_history_openalex(pmid=None, doi=None):
         time.sleep(1)
         url = f"https://api.openalex.org/works/{openalex_id}"
         headers = {"User-Agent": "PrimeTimeResearchApp/0.1 (mailto:maia.marin94@e-uvt.ro)"}
-        response = requests.get(url, headers=headers)
-
-        if response.status_code == 200:
-            data = response.json()
-            counts_by_year = data.get("counts_by_year", [])
-            history = {entry["year"]: entry["cited_by_count"] for entry in counts_by_year}
-            return history
-        elif response.status_code == 404:
+        response = requests.get(url, headers=headers, timeout=10)
+        if response.status_code == 404:
             print(f"OpenAlex: No record found for {openalex_id}")
             return {}
-        else:
-            print(f"OpenAlex API error: {response.status_code}")
-            return {}
+        response.raise_for_status()
+        data = response.json()
+        counts_by_year = data.get("counts_by_year", [])
+        history = {entry["year"]: entry["cited_by_count"] for entry in counts_by_year}
+        return history
     except Exception as e:
         print(f"Error fetching citation history from OpenAlex: {e}")
         return {}

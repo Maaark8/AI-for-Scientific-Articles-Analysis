@@ -1,5 +1,5 @@
 import { writable } from 'svelte/store';
-import type { Article, SearchResult, AppState } from './types';
+import type { Article } from './api';
 
 // Notification system
 export interface Notification {
@@ -11,46 +11,23 @@ export interface Notification {
   timeout?: number;
 }
 
-// App state store
-export const appState = writable<AppState>({
-  isLoading: false,
-  error: null,
-  currentSearch: null,
-  articles: [],
-  searches: []
-});
-
 // Individual stores for easier component access
 export const isLoading = writable<boolean>(false);
 export const error = writable<string | null>(null);
 export const articles = writable<Article[]>([]);
-export const searches = writable<SearchResult[]>([]);
-export const currentSearch = writable<SearchResult | null>(null);
 export const notifications = writable<Notification[]>([]);
 
 // Helper functions
 export const setLoading = (loading: boolean) => {
   isLoading.set(loading);
-  appState.update(state => ({ ...state, isLoading: loading }));
 };
 
 export const setError = (errorMessage: string | null) => {
   error.set(errorMessage);
-  appState.update(state => ({ ...state, error: errorMessage }));
 };
 
 export const clearError = () => {
   setError(null);
-};
-
-export const setArticles = (newArticles: Article[]) => {
-  articles.set(newArticles);
-  appState.update(state => ({ ...state, articles: newArticles }));
-};
-
-export const addArticles = (newArticles: Article[]) => {
-  articles.update(current => [...current, ...newArticles]);
-  appState.update(state => ({ ...state, articles: [...state.articles, ...newArticles] }));
 };
 
 // Notification functions

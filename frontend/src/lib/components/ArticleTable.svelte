@@ -3,6 +3,9 @@
   import { apiClient } from '../api';
   import { articles, setLoading, setError, clearError, addNotification } from '../stores';
   import type { Article } from '../api';
+  import { Button } from '$lib/ui/button';
+  import { Card } from '$lib/ui/card';
+  import { Input } from '$lib/ui/input';
 
   let articleList: Article[] = [];
   let filteredArticles: Article[] = [];
@@ -144,6 +147,12 @@
     target.value = '';
   }
 
+  function handleJumpKeypress(event: KeyboardEvent) {
+    if (event.key === 'Enter') {
+      jumpToPage(event);
+    }
+  }
+
   // Watch for search query changes
   $: if (searchQuery !== undefined) {
     filterAndSortArticles();
@@ -179,38 +188,45 @@
   });
 </script>
 
-<div class="card">
+<Card>
   <div class="flex justify-between items-center mb-4">
     <h2 class="text-xl font-semibold text-gray-900">📚 Articles</h2>
     <div class="flex space-x-2">
-      <button
+      <Button
         on:click={exportToCSV}
         disabled={articleList.length === 0}
-        class="btn-secondary text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+        variant="secondary"
+        size="sm"
+        className="disabled:opacity-50 disabled:cursor-not-allowed"
       >
         📄 Export CSV
-      </button>
-      <button
+      </Button>
+      <Button
         on:click={loadArticles}
-        class="btn-secondary text-sm"
+        variant="secondary"
+        size="sm"
       >
         🔄 Refresh
-      </button>
+      </Button>
     </div>
   </div>
 
   <!-- Search and Filter Controls -->
   <div class="mb-4 flex flex-col sm:flex-row gap-4">
     <div class="flex-1">
-      <input
+      <Input
         type="text"
         bind:value={searchQuery}
         placeholder="Search articles by title, abstract, author, journal, or PMID..."
-        class="input-field"
+        className="w-full"
       />
     </div>
     <div class="flex gap-2">
-      <select bind:value={itemsPerPage} on:change={() => currentPage = 1} class="input-field">
+      <select
+        bind:value={itemsPerPage}
+        on:change={() => currentPage = 1}
+        class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      >
         <option value={5}>5 per page</option>
         <option value={10}>10 per page</option>
         <option value={20}>20 per page</option>
@@ -232,12 +248,14 @@
       {#if searchQuery}
         <p class="text-lg">� No articles found matching "{searchQuery}"</p>
         <p class="text-sm">Try adjusting your search terms</p>
-        <button 
+        <Button 
           on:click={() => searchQuery = ''}
-          class="btn-secondary mt-3"
+          variant="secondary"
+          size="sm"
+          className="mt-3"
         >
           Clear Search
-        </button>
+        </Button>
       {:else}
         <p class="text-lg">�📄 No articles found</p>
         <p class="text-sm">Search for articles using the search form above</p>
@@ -395,7 +413,7 @@
                 max={totalPages}
                 placeholder="Page"
                 class="w-16 px-2 py-1 border border-gray-300 rounded text-sm"
-                on:keypress={(e) => e.key === 'Enter' && jumpToPage(e)}
+                on:keypress={handleJumpKeypress}
               />
             </div>
           </div>
@@ -460,4 +478,4 @@
       Showing {articleList.length} article{articleList.length !== 1 ? 's' : ''}
     </div>
   {/if}
-</div>
+</Card>
